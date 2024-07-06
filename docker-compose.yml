@@ -1,0 +1,63 @@
+services:
+  ai_notes:
+    build:
+      context: .
+      args:
+        - DEV=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai_notes:/ai_notes
+      - dev-static-data:/vol/web
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=devuser
+      - DB_PASS=root
+      - DEBUG=1
+      - OPENAI_API_KEY=org-rTcEitkiyBxiyihh5GEUejIh
+    depends_on:
+      - db
+    env_file:
+      - .env  # Load environment variables from .env file
+
+  worker:
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: ["celery", "-A", "ai_notes", "worker", "--loglevel=info"]
+    volumes:
+      - ./ai_notes:/ai_notes
+    environment:
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=devuser
+      - DB_PASS=root
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=root
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+
+volumes:
+  dev-db-data:
+  dev-static-data:
