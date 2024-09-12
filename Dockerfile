@@ -18,16 +18,19 @@ COPY ./ai_notes /ai_notes
 WORKDIR /ai_notes
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y build-essential && \
-    python -m venv /py && \
-    /py/bin/pip install --upgrade pip && \
-    /py/bin/pip install -r /tmp/requirements.txt && \
-    if [ $DEV = "true" ]; then /py/bin/pip install -r /tmp/requirements.dev.txt ; fi && \
-    rm -rf /tmp && \
-    adduser --disabled-password --no-create-home django-user
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && python -m venv /py \
+    && /py/bin/pip install --upgrade pip \
+    && /py/bin/pip install -r /tmp/requirements.txt \
+    && if [ "$DEV" = "true" ]; then /py/bin/pip install -r /tmp/requirements.dev.txt ; fi \
+    && /py/bin/pip install -U https://github.com/coletdjnz/yt-dlp-youtube-oauth2/archive/refs/heads/master.zip \
+    && rm -rf /tmp \
+    && adduser --disabled-password --no-create-home django-user
+
+# Create the /videos directory and set the ownership before switching to the non-root user
+RUN mkdir -p /videos && chown -R django-user:django-user /videos
 
 # Switch to non-root user
 USER django-user
-
-# Define the default command to run the application
-CMD ["run.sh"]

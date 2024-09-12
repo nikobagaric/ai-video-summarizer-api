@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  ai_notes:
+  backend:
     build:
       context: .
       args:
@@ -8,7 +10,7 @@ services:
       - "8000:8000"
     volumes:
       - ./ai_notes:/ai_notes
-      - dev-static-data:/vol/web
+      - ./videos:/videos  # Mount the videos directory
     command: >
       sh -c "python manage.py wait_for_db &&
              python manage.py migrate &&
@@ -23,41 +25,20 @@ services:
     depends_on:
       - db
     env_file:
-      - .env  # Load environment variables from .env file
-
-  worker:
-    build:
-      context: .
-      args:
-        - DEV=true
-    command: ["celery", "-A", "ai_notes", "worker", "--loglevel=info"]
-    volumes:
-      - ./ai_notes:/ai_notes
-    environment:
-      - DB_HOST=db
-      - DB_NAME=devdb
-      - DB_USER=devuser
-      - DB_PASS=root
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    depends_on:
-      - db
-      - redis
+      - .env 
 
   db:
-    image: postgres:13-alpine
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
+    image: postgres:13
     environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASSWORD=root
-
-  redis:
-    image: "redis:alpine"
-    ports:
-      - "6379:6379"
-
+      POSTGRES_DB: devdb
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: root
+      LANGCHAIN_TRACING_V2: true
+      LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
+      LANGCHAIN_API_KEY: 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
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  dev-db-data:
-  dev-static-data:
+  postgres_data:
+  videos: 
