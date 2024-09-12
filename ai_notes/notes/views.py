@@ -56,14 +56,17 @@ class NotesViewSet(viewsets.ModelViewSet):
 
             video_info, error = get_video_info(url)
             if error:
+                print("VIDEO INFO ERROR")
                 return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
 
             text = read_sound(video_path)
             if not text:
+                print("SOUND READER ERROR")
                 return Response({'error': 'Failed to extract audio from the video'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             summary = summarize_text(text)
             if not summary:
+                print("SUMM ERROR")
                 return Response({'error': 'Failed to generate a summary'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # Save the summarized text as a note
@@ -76,4 +79,4 @@ class NotesViewSet(viewsets.ModelViewSet):
             note_serializer = self.get_serializer(note)
             return Response(note_serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response({'error': 'An error occurred while processing the YouTube URL'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'An error occurred while processing the YouTube URL: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

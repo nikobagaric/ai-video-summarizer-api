@@ -21,7 +21,6 @@ services:
       - DB_USER=devuser
       - DB_PASS=root
       - DEBUG=1
-      - OPENAI_API_KEY=org-rTcEitkiyBxiyihh5GEUejIh
     depends_on:
       - db
     env_file:

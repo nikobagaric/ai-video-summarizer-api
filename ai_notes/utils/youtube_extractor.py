@@ -1,4 +1,4 @@
-import yt_dlp
+from pytubefix import YouTube
 import re
 import os
 import logging
@@ -10,44 +10,47 @@ DOWNLOAD_DIR = "/videos"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def download_video(url):
+def download_video(url): # WORKS!!!!!!!!
     try:
-        # Ensure the download directory exists
-        if not os.path.exists(DOWNLOAD_DIR):
-            os.makedirs(DOWNLOAD_DIR)
+        yt = YouTube(url)
+        print(yt.title)
+        stream = yt.streams.get_audio_only()
+        print("something?")
 
-        ydl_opts = {
-            'format': 'bestaudio/best',  # Download best quality audio
-            'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s'),
-            'noplaylist': True,  # Ensure only a single video is downloaded, not the whole playlist
-            'quiet': True
-        }
+        # Check if a valid audio stream was found
+        if stream:
+            # Ensure the download directory exists
+            print(stream)
+            if not os.path.exists(DOWNLOAD_DIR):
+                os.makedirs(DOWNLOAD_DIR)
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info_dict)
-            return file_path, None
+            # Download the video
+            return stream.download(output_path=DOWNLOAD_DIR, mp3=True), None
+        else:
+            logger.error(f"No audio stream found for URL: {url}")
+            return None, "Audio stream not found"
     except Exception as e:
         logger.error(f"Error downloading video from {url}: {e}")
         return None, f"Error: {str(e)}"
 
 def get_video_info(url):
     try:
-        ydl_opts = {
-            'quiet': True,
-            'noplaylist': True
-        }
+        yt = YouTube(url)
+        stream = yt.streams.first()
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=False)
+        # Check if streams are available
+        if stream:
             video_info = {
-                "title": info_dict.get("title"),
-                "author": info_dict.get("uploader"),
-                "length": info_dict.get("duration"),
-                "views": info_dict.get("view_count"),
-                "thumbnail": info_dict.get("thumbnail"),
+                "title": yt.title,
+                "author": yt.author,
+                "length": yt.length,
+                "views": yt.views,
+                "thumbnail": yt.thumbnail_url,
             }
             return video_info, None
+        else:
+            logger.error(f"No streams found for URL: {url}")
+            return None, "Video stream not found"
     except Exception as e:
         logger.error(f"Error getting video info for {url}: {e}")
         return None, f"Error: {str(e)}"
